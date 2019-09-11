@@ -1,6 +1,10 @@
+# setwd('C:\\Users\\yancx\\Desktop\\Thesis\\Peter fMRI data\\')
+setwd('/home/yy2513/fMRIdata/')
+
+install.packages("R.matlab", repos = "http://mirrors.rit.edu/CRAN/")
 library('R.matlab')
+install.packages("matrixcalc", repos = "http://mirrors.rit.edu/CRAN/")
 library('matrixcalc')
-setwd('C:\\Users\\yancx\\Desktop\\Thesis\\Peter fMRI data\\')
 basis <- readMat("basis.mat")
 load("Y_3280")
 
@@ -42,9 +46,11 @@ obj_val <- function(Y,D,d, B,u,v, lambda, R){
 
 # step1: fix U and d, solve v(v is unknown here)
 # step2: fix v(at solution of previous step), u and d are unknown here
-
+install.packages("Matrix", repos = "http://mirrors.rit.edu/CRAN/")
 library("Matrix") # sparse matrix
+install.packages("pcg", repos = "http://mirrors.rit.edu/CRAN/")
 library("pcg")
+install.packages("matlib", repos = "http://mirrors.rit.edu/CRAN/")
 library("matlib")
 
 lr.func.stp12 <- function(Y, D, d, B, u, v, lambda, R){

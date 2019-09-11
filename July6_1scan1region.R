@@ -2,16 +2,16 @@ library('R.matlab')
 library('matrixcalc')
 setwd('C:\\Users\\yancx\\Desktop\\Thesis\\Peter fMRI data\\')
 basis <- readMat("basis.mat")
-load("Scans.arr")
-
-dim(scan)
-
+# load("Scans.arr")
 # Y is one scan and one region
-Y <- Scans.arr[,1,1,]
+# Y <- Scans.arr[,1,1,]
 # Y[1:3,1]
-
-Y <- array(data = Y, dim = c(1200,1,820))
+# Y <- array(data = Y, dim = c(1200,1,820))
 # Y[1:3,1,1]
+
+# save(Y, file = "Y_1S1R")
+
+load("Y_1S1R")
 
 
 D <- basis$D
@@ -19,36 +19,14 @@ B <- basis$B
 R <- basis$R
 
 
-# d is random array with dimension (7,135836,820)
+# d is random array with dimension (7,1,820)
 # u is random matrix with dimension (33,p) where p=2 in this case
-# v is random array with dimension (p,135836,820) where p=2
+# v is random array with dimension (p,1,820) where p=2
 
 p <- 2
-v <- array(data = runif(p*1), dim = c(p,1,820))
-d <- array(data = runif(7*1), dim = c(7,1,820))
+d <- array(data = runif(7*1*820), dim = c(7,1,820))
 u <- matrix(data = runif(33*p), nrow = 33, ncol = p)
-
-# For patient 1, 1 scan and 1 region
-Y1 <- Y[,,1]
-Y_11 <- Y1[,1]
-Y_11 <- as.matrix(Y_11)
-
-# reposition the data to become 30*1171
-
-reformat <- function(Y){
-  h <- 30
-  t <- dim(Y)[1]-h+1
-  mat1 <- matrix(data = 0, nrow = h, ncol = t)
-  Yn <- Y
-  for (i in 1:t) {
-    mat1[,i] <- Yn[i:(i+29),]
-  }
-  mat1
-}
-one_SandR <- reformat(Y_11)
-
-one_arr <- array(data = one_SandR, dim = c(30,1171,1))
-
+v <- array(data = runif(p*1*820), dim = c(p,1,820))
 
 ###################################################
 #       Obj.val
@@ -87,6 +65,9 @@ lr.func.stp12 <- function(Y, D, d, B, u, v, lambda, R){
   F_cur=obj_val(Y,D,d,B,u,v,lambda,R)
   maxIter=20
   N = dim(Y)[3] # Y_train
+  ########################################
+  # May 6 
+  # the following for loop is for rest of function
   for (iter in 1:maxIter)
   {
     print(iter)
@@ -103,6 +84,9 @@ lr.func.stp12 <- function(Y, D, d, B, u, v, lambda, R){
       v[,,i] = inv_Q%*%(t(W)%*%Y_new[,,i]) 
     }
     v
+    #}
+    ################################# iter for loop should not end here
+    
     # When V are fixed, 
     # min_{U} 1/n ||Y -Dd - X*U*V||^2 + lambda U' R U
     # A bit more complicated but fairly easy. 
@@ -124,13 +108,14 @@ lr.func.stp12 <- function(Y, D, d, B, u, v, lambda, R){
     u = matrix(sol, nrow = Ln, ncol = P)
     # in Matlab d_cur=cell(N,1)
     # R has to set up dimension
-    # For previous, d is random array with dimension (7,116,820)
-    d = array(data = sol, dim = c(7,1171,1))
+    # For previous, d is random array with dimension (7,1,820)
+    d = array(data = sol, dim = c(7,1,820))
     for (n in 1:N) {
       d[,,n] = H2%*%Y[,,n]
       d[,,n] = d[,,n] - H2%*%B%*%u%*%v[,,n]
     }
     F_new=obj_val(Y,D,d,B,u,v,lambda,R)
+    print(F_new)
     if (F_new - F_cur > 1e-5)
     {F_cur = F_new
     break}
@@ -139,45 +124,16 @@ lr.func.stp12 <- function(Y, D, d, B, u, v, lambda, R){
   list(d=d,v=v,u=u)
 }
 
-output1 <- lr.func.stp12(one_arr, D, d, B, u, v, lambda=100, R)
-
-output1
-output1$u
-
-matplot(B%*%output1$u, type = "l")
+output1 <- lr.func.stp12(Y, D, d, B, u, v, lambda=100, R)
 
 
-matplot(output1$u, type = "l")
+matplot(B%*%output1$u, type = "l", ylab = "B*u")
 
+# d is random array with dimension (7,1,820)
+# out.d is matrix with dimension (7,1*820)
+out.d <- matrix(data = output1$d, ncol = 820)
+image(out.d)
 
+matplot(B,type = "l")
+matplot(D,type = "l")
 
-
-
-
-
-
-
-### test for reformat function
-### m1 is 5*1 matrix
-### the final output should be
-###     [,1] [,2] [,3] [,4]
-##[1,]    1    2    3    4
-##[2,]    2    3    4    5
-
-m1 <- matrix(data = rep(1:5), ncol = 1)
-m1
-
-reformat <- function(Y){
-  h <- 2
-  t <- dim(Y)[1]-h+1
-  mat1 <- matrix(data = 0, nrow = h, ncol = t)
-  Yn <- Y
-  for (i in 1:t) {
-    mat1[,i] <- Yn[i:(i+1),]
-  }
-  mat1
-}
-onep <- reformat(m1)
-onep
-
-### test for reformat function
